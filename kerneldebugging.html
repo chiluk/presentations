@@ -94,7 +94,7 @@ a.k.a. the resume
 ### Scale Out
 - Servers are like cattle
 - You number them, and when they get sick, you shoot them
-- If wolves start taking out too muny cattle, shoot them too.
+- If wolves start taking out too many cattle, shoot them too.
 #### Bill Baker, Distinguished Engineer, Microsoft
 
 ---
@@ -141,13 +141,11 @@ Anyone notice something that might cause a problem?
 - Collect Logs
   - Stack Traces
   - OOPS
-  - Exact kernel versions to go with
+  - Exact kernel versions
 
 - Consider logging console output
 
 - Consider rsyslog
-
-- Grab 
 
 - Turn on crashdump collection
 
@@ -156,17 +154,21 @@ Anyone notice something that might cause a problem?
 # Getting the sources
 
 - Centos
+
   - https://git.centos.org/project/rpms
   - git clone  https://git.centos.org/git/centos-git-common.git 
   - git checkout c7
   - centos-git-common/get_sources.sh
+
 --
   - All you get is an RPM source tree, with no git searchable patch history, and very few broken out patches
 
 --
 
 - Ubuntu / Debian
+
   - apt-get source linux-image-$(uname-r)
+
 --
   - http://kernel.ubuntu.com/git/?q=ubuntu%2F
   - git clone git://kernel.ubuntu.com/ubuntu/ubuntu-*
@@ -186,21 +188,21 @@ I prefer distributions that provide git trees with full history, and documentati
   - git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
   - Maintained by Linus Torvalds
 
-# Stable Kernel
-  - Contains 
+- Stable Kernel
+  - Release kernels + bug fixes.
   - git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
   - Maintained by Greg Kroah-Hartman
   - Make sure to check out the correct version branch
 
 --
 
-# Subsystem development trees.
+- Subsystem development trees.
   - XFS git://git.kernel.org/pub/scm/linux/kernel/git/djwong/xfs-linux.git
   - Networking git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git
 
 ---
 
-Kernel Structure
+# Kernel Structure
 - Documentation/
   - Just learning, start here.
   - process/ - Explains how to interact with the community
