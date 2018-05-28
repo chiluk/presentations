@@ -65,13 +65,163 @@ a.k.a. the resume
 --
 
 - 2012-2017 Canonical, Ubuntu Sustaining Engineering
+  - Worked closely with Ubuntu Kernel Team
+  - Became an Ubuntu Core Dev
 
 --
 - 2017-Current Indeed.com, Linux Platform Engineer
 
 ---
+# Pets vs Cattle
+
+### Scale Up
+- Servers are like pets
+- You name them, and when they get sick, you nurse them back to health
+
+### Scale Out
+- Servers are like cattle
+- You number them, and when they get sick, you shoot them
+#### Bill Baker, Distinguished Engineer, Microsoft
+
+---
+
+# Pets vs Cattle vs Wolves
+
+### Scale Up
+- Servers are like pets
+- You name them, and when they get sick, you nurse them back to health
+
+### Scale Out
+- Servers are like cattle
+- You number them, and when they get sick, you shoot them
+- If wolves start taking out too muny cattle, shoot them too.
+#### Bill Baker, Distinguished Engineer, Microsoft
+
+---
+# Indeed Bugzilla
+
+- SYSENG-2163: Rekick iad-mexec3  
+Description: "We need to rekick iad-mexec3 due to filesystem corruption. Currently this host is in downtime and removed from the mesos cluster."
+
+--
+
+- SYSENG-2336: Rekick sjc-mexec11
+
+--
+
+- SYSENG-2342: Rekick sjc-mexec13
+
+--
+
+- SYSENG-2398: replace iad-mexec3; /var is corrupt for the n'th time  
+
+--
+
+- SYSENG-2624: Rekick stg-mexec7: /var corrupted  
+
+- SYSENG-2723: Rekick iad-mexec6  
+
+- SYSENG-2770: /var corrupted on iad-mexec16  
+
+- SYSENG-2802: Fix the corrupt disk issue on iad-mexec10 (kernel bug)  
+
+- SYSENG-2849: hkg-mexec5/6 var corruption  
+
+- SYSENG-2850: Monitor on corrupt filesystems  
+
+- SYSENG-3056: sjc-mexec28 /var corruption by xfs bug  
+
+???
+Anyone notice something that might cause a problem?
+
+---
+
+# Gather Information
+
+- Collect Logs
+  - Stack Traces
+  - OOPS
+  - Exact kernel versions to go with
+
+- Consider logging console output
+
+- Consider rsyslog
+
+- Grab 
+
+- Turn on crashdump collection
+
+---
+
+# Getting the sources
+
+- Centos
+  - https://git.centos.org/project/rpms
+  - git clone  https://git.centos.org/git/centos-git-common.git 
+  - git checkout c7
+  - centos-git-common/get_sources.sh
+--
+  - All you get is an RPM source tree, with no git searchable patch history, and very few broken out patches
+
+--
+
+- Ubuntu / Debian
+  - apt-get source linux-image-$(uname-r)
+--
+  - http://kernel.ubuntu.com/git/?q=ubuntu%2F
+  - git clone git://kernel.ubuntu.com/ubuntu/ubuntu-*
+  - $ fakeroot debian/rules binary-generic
+
+--
+
+- Choose a distribution that has useful access to source code.
+
+???
+I prefer distributions that provide git trees with full history, and documentation.
+
+---
+# Kernel Sources
+- Mainline Kernel
+  - Where all active kernel development eventually gets merged
+  - git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+  - Maintained by Linus Torvalds
+
+# Stable Kernel
+  - Contains 
+  - git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
+  - Maintained by Greg Kroah-Hartman
+  - Make sure to check out the correct version branch
+
+--
+
+# Subsystem development trees.
+  - XFS git://git.kernel.org/pub/scm/linux/kernel/git/djwong/xfs-linux.git
+  - Networking git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git
+
+---
+
+Kernel Structure
+- Documentation/
+  - Just learning, start here.
+  - process/ - Explains how to interact with the community
+- mm/
+- net/
+- fs/
+- arch/
+- drivers/
+- firmware/
+- scripts/
+  - get_maintainer.pl
+  - checkpatch.pl
+  - decodecode - Analyzes "code" output in an OOPS
+  - faddr2line - translates function+offset output to file:line 
+
+---
+
+# XFS Bug
 
 
+---
     </textarea>
     <script src="https://remarkjs.com/downloads/remark-latest.min.js">
     </script>
