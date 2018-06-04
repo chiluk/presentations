@@ -13,6 +13,10 @@
         font-family: 'Yanone Kaffeesatz';
         font-weight: normal;
       }
+      pre {
+	    font-size: 0.7em;
+      }
+      .remark-code{ font-size: 1.1em; }
       .footnote {
         position: absolute;
         bottom: 3em;
@@ -121,7 +125,7 @@ Anyone notice something that might cause a problem?
 
 ---
 
-# Gather Information
+# Step #1: Gather Information
 
 - Collect Logs
   - Stack Traces
@@ -132,11 +136,51 @@ Anyone notice something that might cause a problem?
 
 - Consider rsyslog
 
-- Turn on crashdump collection
+- Possibly turn on crashdump collection
 
 ---
+name: log
 
-# Getting the sources
+
+# Case Study: The Information
+```log
+XFS (dm-4): Internal error XFS_WANT_CORRUPTED_GOTO at line 3505 of file fs/xfs/libxfs/xfs_btree.c.  Caller xfs_free_ag_extent+0x35d/0x7a0 [xfs]
+CPU: 18 PID: 9896 Comm: mesos-slave Not tainted 4.10.10-1.el7.elrepo.x86_64 #1
+Hardware name: Supermicro PIO-618U-TR4T+-ST031/X10DRU-i+, BIOS 2.0 12/17/2015
+Call Trace:
+dump_stack+0x63/0x87
+xfs_error_report+0x3b/0x40 [xfs]
+? xfs_free_ag_extent+0x35d/0x7a0 [xfs]
+xfs_btree_insert+0x1b0/0x1c0 [xfs]
+xfs_free_ag_extent+0x35d/0x7a0 [xfs]
+xfs_free_extent+0xbb/0x150 [xfs]
+xfs_trans_free_extent+0x4f/0x110 [xfs]
+? xfs_trans_add_item+0x5d/0x90 [xfs] 
+xfs_extent_free_finish_item+0x26/0x40 [xfs]
+xfs_defer_finish+0x149/0x410 [xfs]
+xfs_remove+0x281/0x330 [xfs]
+xfs_vn_unlink+0x55/0xa0 [xfs]
+vfs_rmdir+0xb6/0x130
+do_rmdir+0x1b3/0x1d0
+SyS_rmdir+0x16/0x20
+do_syscall_64+0x67/0x180
+entry_SYSCALL64_slow_path+0x25/0x25
+RIP: 0033:0x7f85d8d92397
+RSP: 002b:00007f85cef9b758 EFLAGS: 00000246 ORIG_RAX: 0000000000000054
+RAX: ffffffffffffffda RBX: 00007f858c00b4c0 RCX: 00007f85d8d92397
+RDX: 00007f858c09ad70 RSI: 0000000000000000 RDI: 00007f858c09ad70
+RBP: 00007f85cef9bc30 R08: 0000000000000001 R09: 0000000000000002
+R10: 0000006f74656c67 R11: 0000000000000246 R12: 00007f85cef9c640
+R13: 00007f85cef9bc50 R14: 00007f85cef9bcc0 R15: 00007f85cef9bc40
+XFS (dm-4): xfs_do_force_shutdown(0x8) called from line 236 of file fs/xfs/libxfs/xfs_defer.c.  Return address = 0xffffffffa028f087
+XFS (dm-4): Corruption of in-memory data detected.  Shutting down filesystem
+XFS (dm-4): Please umount the filesystem and rectify the problem(s)
+```
+???
+OK now we have the information, next let's get the sources.
+---
+
+# Step #2: Getting the sources
 
 - Centos
 
@@ -186,6 +230,11 @@ I prefer distributions that provide git trees with full history, and documentati
   - Networking git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git
 
 ---
+
+# Case Study: 
+
+
+--- 
 
 # Kernel Structure
 - Documentation/
