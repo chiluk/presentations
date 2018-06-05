@@ -23,6 +23,12 @@
       .remark-container {
 	      background-color: #2164f3 ;
       }
+	  .full-height {
+	 	  background-size: auto 100%;
+   	  }
+	  .full-width {
+	  	  background-size: 100% auto;
+	  }
       .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
     </style>
   </head>
@@ -262,7 +268,7 @@ I prefer distributions that provide git trees with full history, and documentati
 
 TODO
 
---- 
+---
 # Step #3: Analysis: Break down the log output
 
 ```log
@@ -319,6 +325,13 @@ do_syscall_64+0x67/0x180
 entry_SYSCALL64_slow_path+0x25/0x25
 ```
 
+* Can use gdb to perform math on a debug symbol enabled vmlinux
+
+```shell
+$ gdb vmlinux
+(gdb) l *xfs_btree_insert+0x1b0/0x1c0
+```
+
 ---
 
 # Step #3: Analysis: Using the Registers
@@ -331,6 +344,10 @@ RBP: 00007f85cef9bc30 R08: 0000000000000001 R09: 0000000000000002
 R10: 0000006f74656c67 R11: 0000000000000246 R12: 00007f85cef9c640
 R13: 00007f85cef9bc50 R14: 00007f85cef9bcc0 R15: 00007f85cef9bc40
 ```
+### Disassemble the kernel
+- Get the debuginfo package
+- $ objdump -r -S -l --disassemble vmlinux > dump.out
+
 * Register to argument mapping defined in ./arch/x86/entry/calling.h
 * x86 function call convention, 64-bit:
 
@@ -340,23 +357,138 @@ arguments            |  callee-saved      | extra caller-saved | return
 -------------------- | -------------------| -------------------| -------------
 rdi rsi rdx rcx r8-9 | rbx rbp [*] r12-15 | r10-11             | rax, rdx [**] 
 ``` 
+
 ???
-This isn't as useful to us, since the registers have been likely been modified by the error path.
+RIP: Register Instruction Pointer
+RSP: Register Stack Pointer
 
-Additionally since we don't have a full memory dump they are only so useful.
+This isn't as useful to us, since the registers have likely been modified by the error path.
 
----
-
-# Step #4: Engage the community.
-# 
+Additionally since we don't have a full memory dump they are only half-useful.
 
 ---
 
-# Debuginfo getting it using it.
+# Step #4: Check for fixes
+
+* Google 
+  * Stack Trace
+  * Mailing list archives
+* Check the git commit logs
+```shell
+ $ git log -r v4.4.. -i --grep "crash" fs/xfs
+```
+???
+TODO: Goose egg
 
 ---
 
-patchwork.kernel.org
+# Step #5: Gather even more info
+
+* Enable crashdump
+* Instrument the kernel code (kprintf) / Build a custom kernel.
+* systemtap
+* eBPF
+* ftrace, jprobes, kprobes
+* Analyze filesystem metadata offline
+
+---
+
+# Step #6: Engage the community.
+
+* Mailing lists
+  * ~~lkml~~!
+  * patchwork.kernel.org
+  * xfs-devel mailing list.
+* IRC
+
+---
+# Case Study: Engaging the community
+
+* Sent an e-mail to xfs devel mailing list
+> "My best guess given code analysis is that we are unable to allocate a new node in the allocation group btree free-list"
+
+--
+
+* Flamed
+> "/me shakes his head.
+> 
+> That filesystem started as a 2.5GB image and was grown to 1TB on
+> deployment. What could possibly go wrong?" <br>
+> <div align="right">- Dave Chinner </div>
+
+--
+<center><h1>i.e. PEBKAC- You're Using It Wrong</h1></center>
+
+---
+
+# Case Study: Engaging the community
+
+* Sent an e-mail to xfs devel mailing list
+> "My best guess given code analysis is that we are unable to allocate a new node in the allocation group btree free-list"
+
+* IRC
+
+--
+> "This is the problematic issue: commit 96f859d52bcb ("libxfs: pack the agfl header structure so XFS_AGFL_SIZE is correct")"
+> ...
+>
+> "[I] need to resurrect the old patches [I] had that automatically detected this condition and fixed it."
+> <div align="right"> - Dave Chinner</div>
+
+--
+
+```c
+--- a/fs/xfs/libxfs/xfs_format.h
++++ b/fs/xfs/libxfs/xfs_format.h
+@@ -786,7 +786,7 @@ typedef struct xfs_agfl {
+        __be64          agfl_lsn;
+        __be32          agfl_crc;
+        __be32          agfl_bno[];     /* actually XFS_AGFL_SIZE(mp) */
+-} xfs_agfl_t;
++} __attribute__((packed)) xfs_agfl_t;
+```
+---
+
+# Case Study: Fixing things
+
+* Check Stock Redhat Kernel
+  * Explicitly removed problematic patch
+* Submitted patch removal to the elrepo kernel. via bugzilla.
+* Created a custom built xfs-repair that understands the patch.
+
+--
+
+### BUT
+* There's no easy way to run xfs-repair on a root volume accross an entire cluster.
+
+---
+class: full-height
+
+background-image: url(baby.jpg)
+
+---
+
+# Case Study: Engaging the community 
+
+* Many conversations on IRC 
+
+* 4 debates on xfs-devel about patch revisions 
+
+--
+
+* 2 months later a27ba2607 is accepted into the xfs-devel  
+
+---
+
+# Mainline submission
+
+---
+# Linux stable backport and submission.
+
+
+TODO # Debuginfo getting it using it.
+
+---
 
 ---
     </textarea>
