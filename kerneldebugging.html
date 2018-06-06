@@ -499,11 +499,10 @@ TODO: Goose egg
 ```
 ---
 
-# Step #7: The fix
+# Step #6.5: The temporary fix
 
-* Check Stock Redhat Kernel
-  * Explicitly removed problematic patch
-* Submitted patch removal to the elrepo kernel. via bugzilla.
+* Explicitly removed problematic patch
+* Submitted patch removal to the elrepo kernel.
 * Created a custom built xfs-repair that understands the patch.
 
 --
@@ -518,27 +517,36 @@ background-image: url(baby.jpg)
 
 ---
 
-# Case Study: Engaging the community 
+# Step #7: The Real fix
 
 * Many conversations on IRC 
 
-* 4 debates on xfs-devel about patch revisions 
+* 4 debates on xfs-devel over patch revisions 
 
 --
 
-* 2 months later a27ba2607 is accepted into the xfs-devel  
+* 2 months later a27ba2607 is accepted into the xfs-devel tree
 
 ---
 
-# Mainline submission
+# Step #8: The follow through.
 
----
-# Linux stable backport and submission.
+* mainline
 
+  * Linus merges patches from xfs-devel into 4.17rc1.
 
-TODO # Debuginfo getting it using it.
+--
 
----
+* linux-stable
+  * Linux stable backport and submission to linux-stable mailing list
+  * Greg KH, accepts the patches and adds them to the stable-queue git tree for review
+  * Eventually merged to stable branches such as 4.4.
+
+--
+
+* Distro Kernels
+  * Some distros follow linux-stable guidelines.
+  * Check your distro just to make sure.
 
 ---
     </textarea>
