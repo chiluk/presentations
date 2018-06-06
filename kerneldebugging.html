@@ -17,18 +17,21 @@
         position: absolute;
         bottom: 3em;
       }
-      #slide-log .remark-code{
+      #slide-oops .remark-code{
+	      font-size: 0.75em;
+      }
+      #slide-OOPSes .remark-code{
 	      font-size: 0.75em;
       }
       .remark-container {
 	      background-color: #2164f3 ;
       }
-	  .full-height {
-	 	  background-size: auto 100%;
-   	  }
-	  .full-width {
-	  	  background-size: 100% auto;
-	  }
+	.full-height {
+		background-size: auto 100%;
+	}
+	.full-width {
+		background-size: 100% auto;
+	}
       .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
     </style>
   </head>
@@ -47,13 +50,6 @@ Linux Platform Engineer, Indeed.com
 
 ---
 
-# Agenda
-
-1. Introduction
-2. Deep-dive
-3. ...
-
----
 # Introduction - Dave Chiluk
 
 a.k.a. the resume
@@ -95,7 +91,7 @@ a.k.a. the resume
 #### Bill Baker, Distinguished Engineer, Microsoft
 
 ---
-# Case Study: Indeed.com crash 
+# Case Study: The Indeed.com xfs crash 
 
 - SYSENG-2163: Rekick iad-mexec3  
 Description: "We need to rekick iad-mexec3 due to filesystem corruption. Currently this host is in downtime and removed from the mesos cluster."
@@ -136,8 +132,7 @@ Anyone notice something that might cause a problem?
 # Step #1: Gather Information
 
 - Collect Logs
-  - Stack Traces
-  - OOPS
+  - First Oops
   - Exact kernel versions
 
 - Consider logging console output
@@ -147,10 +142,10 @@ Anyone notice something that might cause a problem?
 - Possibly turn on crashdump collection
 
 ---
-name: log
+name: oops
+template: oops
 
-
-# Case Study: The Information
+# Case Study: The Oops
 ```log
 XFS (dm-4): Internal error XFS_WANT_CORRUPTED_GOTO at line 3505 of file fs/xfs/libxfs/xfs_btree.c.  Caller xfs_free_ag_extent+0x35d/0x7a0 [xfs]
 CPU: 18 PID: 9896 Comm: mesos-slave Not tainted 4.10.10-1.el7.elrepo.x86_64 #1
@@ -185,15 +180,24 @@ XFS (dm-4): Corruption of in-memory data detected.  Shutting down filesystem
 XFS (dm-4): Please umount the filesystem and rectify the problem(s)
 ```
 ???
+* Oops: #
+* Modules List
+* Taint flags
+* Code: Text code, use decode_code
+
 OK now we have the information, next let's get the sources.
+
 ---
+
 # Case Study: Gather problem specific data
 
 ### xfs-metadump
-Copies filesystem metadata to a file, while obfuscating specifics.  No data is copied.
+* Copies filesystem metadata to a file, while obfuscating specifics.  No data is copied.
 
 ### xfs-restore
-Takes a dump, and restores it to a filesystem. Can be a loop device against a sparse raw file.
+* Takes a dump, and restores it to a filesystem. 
+* Can be a loop device against a sparse raw file.
+
 ---
 
 # Step #2: Getting the sources
@@ -221,14 +225,13 @@ Takes a dump, and restores it to a filesystem. Can be a loop device against a sp
 
 --
 
-- Choose a distribution that has useful access to source code.
+- Choose a distribution/Kernel that has useful access to source code.
 
 ???
 I prefer distributions that provide git trees with full history, and documentation.
 
 ---
-
-# Kernel Sources
+# Step #2: Getting the sources
 - Mainline Kernel
   - Where all active kernel development eventually gets merged
   - git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
@@ -239,6 +242,7 @@ I prefer distributions that provide git trees with full history, and documentati
   - git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
   - Maintained by Greg Kroah-Hartman
   - Make sure to check out the correct version branch
+  - **This is the branch that the elrepo kernel we use comes from**
 
 --
 
@@ -247,10 +251,12 @@ I prefer distributions that provide git trees with full history, and documentati
   - Networking git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git
 
 ---
-# Kernel Structure
+# Step #2: Kernel Structure
 - Documentation/
-  - Just learning, start here.
+  - Start here.
   - process/ - Explains how to interact with the community
+  - admin-guide/ - RTFM
+  - admin-guide/bug-hunting.rst
 - mm/
 - net/
 - fs/
@@ -260,16 +266,54 @@ I prefer distributions that provide git trees with full history, and documentati
 - scripts/
   - get_maintainer.pl
   - checkpatch.pl
-  - decodecode - Analyzes "code" output in an OOPS
+  - decodecode - Analyzes "code" output in an Oops
   - faddr2line - translates function+offset output to file:line 
 
----
-# Step #3: Analysis: OOPSes.
-
-TODO
+???
+bug-hunting.rst renamed from oops-tracing.txt
 
 ---
-# Step #3: Analysis: Break down the log output
+name: OOPSes
+# Step #3: Oops Analysis
+
+```log
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 28102 at kernel/module.c:1108 module_put+0x57/0x70
+Modules linked in: dvb_usb_gp8psk(-) dvb_usb dvb_core nvidia_drm(PO) nvidia_modeset(PO) snd_hda_codec_hdmi snd_hda_intel snd_hda_codec snd_hwdep snd_hda_core snd_pcm snd_timer snd soundcore nvidia(PO) [last unloaded: rc_core]
+CPU: 1 PID: 28102 Comm: rmmod Tainted: P        WC O 4.8.4-build.1 #1
+Hardware name: MSI MS-7309/MS-7309, BIOS V1.12 02/23/2009
+ 00000000 c12ba080 00000000 00000000 c103ed6a c1616014 00000001 00006dc6
+ c1615862 00000454 c109e8a7 c109e8a7 00000009 ffffffff 00000000 f13f6a10
+ f5f5a600 c103ee33 00000009 00000000 00000000 c109e8a7 f80ca4d0 c109f617
+Call Trace:
+ [<c12ba080>] ? dump_stack+0x44/0x64
+ [<c103ed6a>] ? __warn+0xfa/0x120
+ [<c109e8a7>] ? module_put+0x57/0x70
+ [<c109e8a7>] ? module_put+0x57/0x70
+ [<c103ee33>] ? warn_slowpath_null+0x23/0x30
+ [<c109e8a7>] ? module_put+0x57/0x70
+ [<f80ca4d0>] ? gp8psk_fe_set_frontend+0x460/0x460 [dvb_usb_gp8psk]
+ [<c109f617>] ? symbol_put_addr+0x27/0x50
+ [<f80bc9ca>] ? dvb_usb_adapter_frontend_exit+0x3a/0x70 [dvb_usb]
+ [<f80bb3bf>] ? dvb_usb_exit+0x2f/0xd0 [dvb_usb]
+ [<c13d03bc>] ? usb_disable_endpoint+0x7c/0xb0
+ [<f80bb48a>] ? dvb_usb_device_exit+0x2a/0x50 [dvb_usb]
+ [<c13d2882>] ? usb_unbind_interface+0x62/0x250
+ [<c136b514>] ? __pm_runtime_idle+0x44/0x70
+ [<c13620d8>] ? __device_release_driver+0x78/0x120
+ [<c1362907>] ? driver_detach+0x87/0x90
+ [<c1361c48>] ? bus_remove_driver+0x38/0x90
+ [<c13d1c18>] ? usb_deregister+0x58/0xb0
+ [<c109fbb0>] ? SyS_delete_module+0x130/0x1f0
+ [<c1055654>] ? task_work_run+0x64/0x80
+ [<c1000fa5>] ? exit_to_usermode_loop+0x85/0x90
+ [<c10013f0>] ? do_fast_syscall_32+0x80/0x130
+ [<c1549f43>] ? sysenter_past_esp+0x40/0x6a
+---[ end trace 6ebc60ef3981792f ]---
+```
+
+---
+# Step #3: Oops Analysis
 
 ```log
 XFS (dm-4): Internal error XFS_WANT_CORRUPTED_GOTO at line 3505 of file 
@@ -303,7 +347,7 @@ i = status return code for passing up the stack. success/failure.
 There are about 4 ways that stat could be set to 1 by xfs_btree_insrec
 
 ---
-# Step #3: Analysis: Break down the stack trace
+# Step #3: Oops Analysis: The stack trace
 ```log
 Call Trace:
 dump_stack+0x63/0x87
@@ -334,7 +378,7 @@ $ gdb vmlinux
 
 ---
 
-# Step #3: Analysis: Using the Registers
+# Step #3: Oops Analysis: The Registers
 ```log
 RIP: 0033:0x7f85d8d92397
 RSP: 002b:00007f85cef9b758 EFLAGS: 00000246 ORIG_RAX: 0000000000000054
@@ -373,6 +417,8 @@ Additionally since we don't have a full memory dump they are only half-useful.
 * Google 
   * Stack Trace
   * Mailing list archives
+  * Related problems given your understanding of the problem.
+
 * Check the git commit logs
 ```shell
  $ git log -r v4.4.. -i --grep "crash" fs/xfs
@@ -393,18 +439,22 @@ TODO: Goose egg
 
 ---
 
-# Step #6: Engage the community.
+# Step #6: Engaging the community.
 
+--
 * Mailing lists
+--
+
   * ~~lkml~~!
   * patchwork.kernel.org
-  * xfs-devel mailing list.
+  * xfs-devel mailing list
+  * Other subsystem specific lists
 * IRC
 
 ---
-# Case Study: Engaging the community
+# Step #6: Engaging the community
 
-* Sent an e-mail to xfs devel mailing list
+* E-mail sent to xfs devel mailing list
 > "My best guess given code analysis is that we are unable to allocate a new node in the allocation group btree free-list"
 
 --
@@ -421,9 +471,9 @@ TODO: Goose egg
 
 ---
 
-# Case Study: Engaging the community
+# Step #6: Engaging the community
 
-* Sent an e-mail to xfs devel mailing list
+* E-mail sent to xfs devel mailing list
 > "My best guess given code analysis is that we are unable to allocate a new node in the allocation group btree free-list"
 
 * IRC
@@ -449,7 +499,7 @@ TODO: Goose egg
 ```
 ---
 
-# Case Study: Fixing things
+# Step #7: The fix
 
 * Check Stock Redhat Kernel
   * Explicitly removed problematic patch

@@ -1,0 +1,44 @@
+BUG: unable to handle kernel paging request at ffff87ff653e8bd0
+IP: [<ffffffffa02fad3f>] __btrfs_map_block+0x2ff/0x1010 [btrfs]
+PGD 0 
+Oops: 0000 [#1] SMP 
+Modules linked in: snd_hrtimer rfcomm bnep bluetooth nls_iso8859_1 eeepc_wmi asus_wmi sparse_keymap snd_hda_codec_hdmi dm_multipath scsi_dh snd_hda_codec_realtek mei_me mei lpc_ich snd_hda_intel snd_hda_codec snd_hwdep snd_pcm snd_page_alloc snd_seq_midi snd_seq_midi_event snd_rawmidi snd_seq snd_seq_device snd_timer snd soundcore intel_rapl x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm crct10dif_pclmul crc32_pclmul ghash_clmulni_intel aesni_intel aes_x86_64 lrw gf128mul glue_helper ablk_helper cryptd mac_hid psmouse serio_raw parport_pc ppdev lp parport btrfs xor raid6_pq libcrc32c dm_mirror dm_region_hash dm_log mxm_wmi radeon ahci i2c_algo_bit pata_acpi libahci ttm firewire_ohci firewire_core drm_kms_helper via_rhine pata_marvell r8169 crc_itu_t mii drm video wmi
+CPU: 2 PID: 4339 Comm: btrfs-endio-1 Not tainted 3.13.0-24-generic #46-Ubuntu
+Hardware name: System manufacturer System Product Name/P8P67 LE, BIOS 3702 12/28/2012
+task: ffff8803b76d97f0 ti: ffff8803b763c000 task.ti: ffff8803b763c000
+RIP: 0010:[<ffffffffa02fad3f>]  [<ffffffffa02fad3f>] __btrfs_map_block+0x2ff/0x1010 [btrfs]
+RSP: 0018:ffff8803b763daa0  EFLAGS: 00010206
+RAX: ffff880365138618 RBX: ffff880365138600 RCX: 000000003ba10000
+RDX: ffff87ff653e8ba8 RSI: 000000000000f000 RDI: 00000000d193b900
+RBP: ffff8803b763db68 R08: 0000000000017200 R09: ffff880365138600
+R10: 0000000000003ba1 R11: 0000000000000002 R12: 00000000d193b900
+R13: ffff8803bf6533c0 R14: 0000000000000000 R15: 000000000000f000
+FS:  0000000000000000(0000) GS:ffff88041ec80000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: ffff87ff653e8bd0 CR3: 000000000ec0e000 CR4: 00000000000407e0
+Stack:
+ ffff8803b763db10 0000000000003ba1 0000000000010000 000000003ba20000
+ 0000000000000000 0000000000003ba2 0000000000000000 0000000000000000
+ 0000000000003ba1 ffff880405143640 ffff880405142000 ffff8803b763dbe8
+Call Trace:
+ [<ffffffffa03009b1>] btrfs_map_bio+0x71/0x540 [btrfs]
+ [<ffffffff811f0004>] ? __bio_copy_iov.isra.14+0x34/0x1f0
+ [<ffffffffa031ac54>] btrfs_submit_compressed_read+0x354/0x4e0 [btrfs]
+ [<ffffffffa02dbee1>] btrfs_submit_bio_hook+0x1d1/0x1e0 [btrfs]
+ [<ffffffff811f0986>] ? bio_alloc_bioset+0x196/0x2a0
+ [<ffffffffa033c7ab>] ? btrfs_dev_replace_unlock+0x7b/0xc0 [btrfs]
+ [<ffffffffa02f63cb>] end_bio_extent_readpage+0x71b/0xb30 [btrfs]
+ [<ffffffffa02cf89c>] ? end_workqueue_fn+0x2c/0x40 [btrfs]
+ [<ffffffff811eefdd>] bio_endio+0x1d/0x30
+ [<ffffffffa02cf8a7>] end_workqueue_fn+0x37/0x40 [btrfs]
+ [<ffffffffa03051ca>] worker_loop+0x15a/0x5c0 [btrfs]
+ [<ffffffffa0305070>] ? btrfs_queue_worker+0x310/0x310 [btrfs]
+ [<ffffffff8108b312>] kthread+0xd2/0xf0
+ [<ffffffff8108b240>] ? kthread_create_on_node+0x1d0/0x1d0
+ [<ffffffff8172637c>] ret_from_fork+0x7c/0xb0
+ [<ffffffff8108b240>] ? kthread_create_on_node+0x1d0/0x1d0
+Code: 7e 41 66 2e 0f 1f 84 00 00 00 00 00 49 63 d4 49 63 4d 10 4c 89 fe 48 8d 14 52 41 83 c4 01 48 83 c0 18 49 8d 54 d5 00 49 0f af ca <48> 03 72 28 48 01 f1 48 89 48 20 48 8b 52 20 48 89 50 18 41 39 
+RIP  [<ffffffffa02fad3f>] __btrfs_map_block+0x2ff/0x1010 [btrfs]
+ RSP <ffff8803b763daa0>
+CR2: ffff87ff653e8bd0
+---[ end trace 1bd8bfd43752a41c ]---
