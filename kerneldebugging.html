@@ -76,6 +76,9 @@ a.k.a. the resume
 - You number them, and when they get sick, you shoot them
 #### Bill Baker, Distinguished Engineer, Microsoft
 
+???
+
+
 ---
 
 # Pets vs Cattle vs Wolves
@@ -91,7 +94,7 @@ a.k.a. the resume
 #### Bill Baker, Distinguished Engineer, Microsoft
 
 ---
-# Case Study: The Indeed.com xfs crash 
+# Case Study: The Indeed.com crash 
 
 - SYSENG-2163: Rekick iad-mexec3  
 Description: "We need to rekick iad-mexec3 due to filesystem corruption. Currently this host is in downtime and removed from the mesos cluster."
@@ -125,27 +128,52 @@ Description: "We need to rekick iad-mexec3 due to filesystem corruption. Current
 - SYSENG-3056: sjc-mexec28 /var corruption by xfs bug  
 
 ???
-Anyone notice something that might cause a problem?
+Does anyone notice what caused us some initial difficulty?
 
 ---
 
 # Step #1: Gather Information
 
-- Collect Logs
-  - First Oops
+### Collect Logs
+  - Make sure to grab the first Oops
   - Exact kernel versions
 
-- Consider logging console output
+### Log console output
 
-- Consider rsyslog
+### Use remote Logging - rsyslog
 
-- Possibly turn on crashdump collection
+### Turn on crashdump collection
+
+---
+
+# Step #1: Gather problem specific data
+
+### Filesystems
+  * Dump the filesystem - dd, physical removal
+  * xfs-metadump - Copies filesystem metadata to a file, while obfuscating specifics.  No data is copied.
+  * xfs-restore - Takes a dump, and restores it to a filesystem or optionally to a sparse raw loopback file
+
+### Network
+  * tcpdump
+  * wireshark
+
+---
+
+# Step #1: Gather problem specific data
+
+### Device Driver
+  * Firmware Level?
+  * Module arguments?
+  * modinfo output
+
+### Dump kernel settings from /sys and /proc
+  * sosreport
 
 ---
 name: oops
 template: oops
 
-# Case Study: The Oops
+# Step #1: The Oops
 ```log
 XFS (dm-4): Internal error XFS_WANT_CORRUPTED_GOTO at line 3505 of file fs/xfs/libxfs/xfs_btree.c.  Caller xfs_free_ag_extent+0x35d/0x7a0 [xfs]
 CPU: 18 PID: 9896 Comm: mesos-slave Not tainted 4.10.10-1.el7.elrepo.x86_64 #1
@@ -189,17 +217,6 @@ OK now we have the information, next let's get the sources.
 
 ---
 
-# Case Study: Gather problem specific data
-
-### xfs-metadump
-* Copies filesystem metadata to a file, while obfuscating specifics.  No data is copied.
-
-### xfs-restore
-* Takes a dump, and restores it to a filesystem. 
-* Can be a loop device against a sparse raw file.
-
----
-
 # Step #2: Getting the sources
 
 - Centos
@@ -208,9 +225,11 @@ OK now we have the information, next let's get the sources.
   - git clone  https://git.centos.org/git/centos-git-common.git 
   - git checkout c7
   - centos-git-common/get_sources.sh
+  - rebuild using rpm-build
 
 --
-  - All you get is an RPM source tree, with no git searchable patch history, and very few broken out patches
+  - Provides an RPM source tree, and source tarball, and very few broken out patches
+  - **NO GIT HISTORY**
 
 --
 
@@ -221,18 +240,17 @@ OK now we have the information, next let's get the sources.
 --
   - http://kernel.ubuntu.com/git/?q=ubuntu%2F
   - git clone git://kernel.ubuntu.com/ubuntu/ubuntu-*
-  - $ fakeroot debian/rules binary-generic
-
---
-
-- Choose a distribution/Kernel that has useful access to source code.
+  - rebuild 
+  ```shell
+  $ fakeroot debian/rules binary-generic
+  ```
 
 ???
 I prefer distributions that provide git trees with full history, and documentation.
 
 ---
 # Step #2: Getting the sources
-- Mainline Kernel
+- Development / Mainline Kernel
   - Where all active kernel development eventually gets merged
   - git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
   - Maintained by Linus Torvalds
