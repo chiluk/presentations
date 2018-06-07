@@ -20,9 +20,6 @@
       #slide-oops .remark-code{
 	      font-size: 0.75em;
       }
-      #slide-OOPSes .remark-code{
-	      font-size: 0.75em;
-      }
       .remark-container {
 	      background-color: #2164f3 ;
       }
@@ -295,40 +292,72 @@ name: OOPSes
 # Step #3: Oops Analysis
 
 ```log
-------------[ cut here ]------------
-WARNING: CPU: 1 PID: 28102 at kernel/module.c:1108 module_put+0x57/0x70
-Modules linked in: dvb_usb_gp8psk(-) dvb_usb dvb_core nvidia_drm(PO) nvidia_modeset(PO) snd_hda_codec_hdmi snd_hda_intel snd_hda_codec snd_hwdep snd_hda_core snd_pcm snd_timer snd soundcore nvidia(PO) [last unloaded: rc_core]
-CPU: 1 PID: 28102 Comm: rmmod Tainted: P        WC O 4.8.4-build.1 #1
-Hardware name: MSI MS-7309/MS-7309, BIOS V1.12 02/23/2009
- 00000000 c12ba080 00000000 00000000 c103ed6a c1616014 00000001 00006dc6
- c1615862 00000454 c109e8a7 c109e8a7 00000009 ffffffff 00000000 f13f6a10
- f5f5a600 c103ee33 00000009 00000000 00000000 c109e8a7 f80ca4d0 c109f617
-Call Trace:
- [<c12ba080>] ? dump_stack+0x44/0x64
- [<c103ed6a>] ? __warn+0xfa/0x120
- [<c109e8a7>] ? module_put+0x57/0x70
- [<c109e8a7>] ? module_put+0x57/0x70
- [<c103ee33>] ? warn_slowpath_null+0x23/0x30
- [<c109e8a7>] ? module_put+0x57/0x70
- [<f80ca4d0>] ? gp8psk_fe_set_frontend+0x460/0x460 [dvb_usb_gp8psk]
- [<c109f617>] ? symbol_put_addr+0x27/0x50
- [<f80bc9ca>] ? dvb_usb_adapter_frontend_exit+0x3a/0x70 [dvb_usb]
- [<f80bb3bf>] ? dvb_usb_exit+0x2f/0xd0 [dvb_usb]
- [<c13d03bc>] ? usb_disable_endpoint+0x7c/0xb0
- [<f80bb48a>] ? dvb_usb_device_exit+0x2a/0x50 [dvb_usb]
- [<c13d2882>] ? usb_unbind_interface+0x62/0x250
- [<c136b514>] ? __pm_runtime_idle+0x44/0x70
- [<c13620d8>] ? __device_release_driver+0x78/0x120
- [<c1362907>] ? driver_detach+0x87/0x90
- [<c1361c48>] ? bus_remove_driver+0x38/0x90
- [<c13d1c18>] ? usb_deregister+0x58/0xb0
- [<c109fbb0>] ? SyS_delete_module+0x130/0x1f0
- [<c1055654>] ? task_work_run+0x64/0x80
- [<c1000fa5>] ? exit_to_usermode_loop+0x85/0x90
- [<c10013f0>] ? do_fast_syscall_32+0x80/0x130
- [<c1549f43>] ? sysenter_past_esp+0x40/0x6a
----[ end trace 6ebc60ef3981792f ]---
+BUG: unable to handle kernel NULL pointer dereference at           (null)
+IP: [<ffffffff816c7348>] __mutex_lock_slowpath+0x98/0x120
+PGD 1a3aa8067
+PUD 1a3b3d067
+PMD 0
+
+Oops: 0002 [#1] PREEMPT SMP
+Modules linked in: bnep ccm binfmt_misc uvcvideo videobuf2_vmalloc videobuf2_memops videobuf2_v4l2 videobuf2_core hid_a4tech videodev x86_pkg_temp_thermal intel_powerclamp coretemp ath3k btusb btrtl btintel bluetooth kvm_intel snd_hda_codec_hdmi kvm snd_hda_codec_realtek snd_hda_codec_generic irqbypass crc32c_intel arc4 i915 snd_hda_intel snd_hda_codec ath9k ath9k_common ath9k_hw ath i2c_algo_bit snd_hwdep mac80211 ghash_clmulni_intel snd_hda_core snd_pcm snd_timer cfg80211 ehci_pci xhci_pci drm_kms_helper syscopyarea sysfillrect sysimgblt fb_sys_fops drm xhci_hcd ehci_hcd asus_nb_wmi(-) asus_wmi sparse_keymap r8169 rfkill mxm_wmi serio_raw snd mii mei_me lpc_ich i2c_i801 video soundcore mei i2c_smbus wmi i2c_core mfd_core
+CPU: 3 PID: 3275 Comm: modprobe Not tainted 4.9.34-gentoo #34
+Hardware name: ASUSTeK COMPUTER INC. K56CM/K56CM, BIOS K56CM.206 08/21/2012
+task: ffff8801a639ba00 task.stack: ffffc900014cc000
+RIP: 0010:[<ffffffff816c7348>]  [<ffffffff816c7348>] __mutex_lock_slowpath+0x98/0x120
+RSP: 0018:ffffc900014cfce0  EFLAGS: 00010282
+RAX: 0000000000000000 RBX: ffff8801a54315b0 RCX: 00000000c0000100
+RDX: 0000000000000001 RSI: 0000000000000000 RDI: ffff8801a54315b4
+RBP: ffffc900014cfd30 R08: 0000000000000000 R09: 0000000000000002
+R10: 0000000000000000 R11: 0000000000000000 R12: ffff8801a54315b4
+R13: ffff8801a639ba00 R14: 00000000ffffffff R15: ffff8801a54315b8
+FS:  00007faa254fb700(0000) GS:ffff8801aef80000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000000000 CR3: 00000001a3b1b000 CR4: 00000000001406e0
 ```
+???
+* OOPS = #1
+* Modules
+* Comm = Command
+* Tainted - documetned in tainted-kernels.rst
+* 
+
+---
+
+# Step #3: Oops Analysis
+
+```log
+Stack:
+ ffff8801a54315b8 0000000000000000 ffffffff814733ae ffffc900014cfd28
+ ffffffff8146a28c ffff8801a54315b0 0000000000000000 ffff8801a54315b0
+ ffff8801a66f3820 0000000000000000 ffffc900014cfd48 ffffffff816c73e7
+Call Trace:
+ [<ffffffff814733ae>] ? acpi_ut_release_mutex+0x5d/0x61
+ [<ffffffff8146a28c>] ? acpi_ns_get_node+0x49/0x52
+ [<ffffffff816c73e7>] mutex_lock+0x17/0x30
+ [<ffffffffa00a3bb4>] asus_rfkill_hotplug+0x24/0x1a0 [asus_wmi]
+ [<ffffffffa00a4421>] asus_wmi_rfkill_exit+0x61/0x150 [asus_wmi]
+ [<ffffffffa00a49f1>] asus_wmi_remove+0x61/0xb0 [asus_wmi]
+ [<ffffffff814a5128>] platform_drv_remove+0x28/0x40
+ [<ffffffff814a2901>] __device_release_driver+0xa1/0x160
+ [<ffffffff814a29e3>] device_release_driver+0x23/0x30
+ [<ffffffff814a1ffd>] bus_remove_device+0xfd/0x170
+ [<ffffffff8149e5a9>] device_del+0x139/0x270
+ [<ffffffff814a5028>] platform_device_del+0x28/0x90
+ [<ffffffff814a50a2>] platform_device_unregister+0x12/0x30
+ [<ffffffffa00a4209>] asus_wmi_unregister_driver+0x19/0x30 [asus_wmi]
+ [<ffffffffa00da0ea>] asus_nb_wmi_exit+0x10/0xf26 [asus_nb_wmi]
+ [<ffffffff8110c692>] SyS_delete_module+0x192/0x270
+ [<ffffffff810022b2>] ? exit_to_usermode_loop+0x92/0xa0
+ [<ffffffff816ca560>] entry_SYSCALL_64_fastpath+0x13/0x94
+Code: e8 5e 30 00 00 8b 03 83 f8 01 0f 84 93 00 00 00 48 8b 43 10 4c 8d 7b 08 48 89 63 10 41 be ff ff ff ff 4c 89 3c 24 48 89 44 24 08 <48> 89 20 4c 89 6c 24 10 eb 1d 4c 89 e7 49 c7 45 08 02 00 00 00
+RIP  [<ffffffff816c7348>] __mutex_lock_slowpath+0x98/0x120
+ RSP <ffffc900014cfce0>
+CR2: 0000000000000000
+---[ end trace 8d484233fa7cb512 ]---
+note: modprobe[3275] exited with preempt_count 2
+
+```
+
 
 ---
 # Step #3: Oops Analysis
