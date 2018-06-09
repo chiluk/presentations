@@ -20,6 +20,9 @@
       #slide-oops .remark-code{
 	      font-size: 0.75em;
       }
+      #slide-bigoops .remark-code{
+	      font-size: 0.50em;
+      }
       .remark-container {
 	      background-color: #2164f3 ;
       }
@@ -75,22 +78,23 @@ Dave Chiluk
 <img src="Indeed_Logo_RGB.png" width="200px"></center>
 
 ???
-
+200 Million unique visitors
+20 Million jobs
+800,000 Employers with sponsored jobs.
+6100 employees
 
 ---
 
 # Introduction - Dave Chiluk
 
+- Indeed.com: Linux Platform Engineer
+  - Fix issues in the open-source code that Indeed uses.
 
-- 2017-Current: Indeed.com, Linux Platform Engineer
-
-- 2012-2017: Canonical, Ubuntu Sustaining Engineering
+- Canonical: Ubuntu Sustaining Engineering
   - Worked closely with Ubuntu Kernel Team
   - Ubuntu Core Developer
 
-- 2008-2012: IBM Linux Technology Center, Embedded Linux Support
-
-- 2004-2008: IBM Embedded Linux Development
+- IBM Linux Technology Center
 
 ---
 # Pets vs Cattle
@@ -118,14 +122,16 @@ Dave Chiluk
 ### Scale Out
 - Servers are like cattle
 - You number them, and when they get sick, you shoot them
-- ** If wolves start taking out too many cattle, shoot them too. **
-#### Bill Baker, Distinguished Engineer, Microsoft
+- ** If wolves start taking out too many cattle, shoot them too. ** 
 
 ---
-# Case Study: The Indeed.com crash 
+# Case Study: An xfs crash 
 
 - SYSENG-2163: Rekick iad-mexec3  
 Description: "We need to rekick iad-mexec3 due to filesystem corruption. Currently this host is in downtime and removed from the mesos cluster."
+
+???
+# These are host machines that run our cloud.
 
 --
 
@@ -156,38 +162,37 @@ Description: "We need to rekick iad-mexec3 due to filesystem corruption. Current
 - SYSENG-3056: sjc-mexec28 /var corruption by xfs bug  
 
 ???
-Does anyone notice what caused us some initial difficulty?
+Does anyone notice something on this slide that caused us difficulty as we started to look at this problem?
 
 ---
 
 # Step #1: Gather Information
 
-### Collect Logs
+### Logs
   - Make sure to grab the first Oops
-  - Exact kernel versions
-
-### Log console output
-
-### Use remote Logging - rsyslog
+  - Get exact kernel versions
+  - Log console output 
+  - Use remote logging if necessary - rsyslog
 
 ### Turn on crashdump collection
-
----
-
-# Step #1: Gather problem specific data
 
 ### Filesystems
   * Dump the filesystem - dd, physical removal
   * xfs-metadump - Copies filesystem metadata to a file, while obfuscating specifics.  No data is copied.
-  * xfs-restore - Takes a dump, and restores it to a filesystem or optionally to a sparse raw loopback file
+  * xfs-restore - creates a filesystem from a metadump
 
-### Network
-  * tcpdump
-  * wireshark
+???
+# We weren't able to get a filesystem dump for quite some time.
+
+# Application + OS + same filesystem = badness
 
 ---
 
-# Step #1: Gather problem specific data
+# Step #1: Gather Information
+ 
+### Network
+  * tcpdump
+  * wireshark
 
 ### Device Driver
   * Firmware Level?
@@ -201,7 +206,7 @@ Does anyone notice what caused us some initial difficulty?
 name: oops
 template: oops
 
-# Step #1: The Oops
+# Case Study: #1 The Oops
 ```log
 XFS (dm-4): Internal error XFS_WANT_CORRUPTED_GOTO at line 3505 of file fs/xfs/libxfs/xfs_btree.c.  Caller xfs_free_ag_extent+0x35d/0x7a0 [xfs]
 CPU: 18 PID: 9896 Comm: mesos-slave Not tainted 4.10.10-1.el7.elrepo.x86_64 #1
@@ -236,10 +241,7 @@ XFS (dm-4): Corruption of in-memory data detected.  Shutting down filesystem
 XFS (dm-4): Please umount the filesystem and rectify the problem(s)
 ```
 ???
-* Oops: #
-* Modules List
-* Taint flags
-* Code: Text code, use decode_code
+Difficult to capture, and took a few crashes to gather.
 
 OK now we have the information, next let's get the sources.
 
@@ -253,7 +255,7 @@ OK now we have the information, next let's get the sources.
   - git clone  https://git.centos.org/git/centos-git-common.git 
   - git checkout c7
   - centos-git-common/get_sources.sh
-  - rebuild using rpm-build
+  - rebuild with rpm-build
 
 --
   - Provides an RPM source tree, and source tarball, and very few broken out patches
@@ -274,7 +276,7 @@ OK now we have the information, next let's get the sources.
   ```
 
 ???
-I prefer distributions that provide git trees with full history, and documentation.
+This is a great thing to consider when deciding which OS to run.
 
 ---
 # Step #2: Getting the sources
@@ -312,15 +314,32 @@ I prefer distributions that provide git trees with full history, and documentati
 - scripts/
   - get_maintainer.pl
   - checkpatch.pl
-  - decodecode - Analyzes "code" output in an Oops
-  - faddr2line - translates function+offset output to file:line 
 
 ???
 bug-hunting.rst renamed from oops-tracing.txt
 
 ---
-name: OOPSes
-# Step #3: Oops Analysis
+
+# Step #2: Getting the debuginfo
+
+### Debuginfo is unstripped versions of vmlinux
+
+This will be necessary if you want to run crash against a crashdump or do
+register analysis against the stack trace in your oops.
+
+- Centos/ RHEL
+  - yum --enablerepo=base-debuginfo install -y kernel-debuginfo-$(uname -r)
+
+- Ubuntu
+  - https://wiki.ubuntu.com/Debug%20Symbol%20Packages
+  ```shell
+  $ sudo apt install linux-image-$(uname -r)-dbgsym
+  ```
+
+---
+
+name: bigoops
+# Step #3: Oops Analysis - The Toolkit
 
 ```log
 BUG: unable to handle kernel NULL pointer dereference at           (null)
@@ -344,19 +363,6 @@ R13: ffff8801a639ba00 R14: 00000000ffffffff R15: ffff8801a54315b8
 FS:  00007faa254fb700(0000) GS:ffff8801aef80000(0000) knlGS:0000000000000000
 CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
 CR2: 0000000000000000 CR3: 00000001a3b1b000 CR4: 00000000001406e0
-```
-???
-* OOPS = #1
-* Modules
-* Comm = Command
-* Tainted - documetned in tainted-kernels.rst
-* 
-
----
-
-# Step #3: Oops Analysis
-
-```log
 Stack:
  ffff8801a54315b8 0000000000000000 ffffffff814733ae ffffc900014cfd28
  ffffffff8146a28c ffff8801a54315b0 0000000000000000 ffff8801a54315b0
@@ -386,19 +392,162 @@ RIP  [<ffffffff816c7348>] __mutex_lock_slowpath+0x98/0x120
 CR2: 0000000000000000
 ---[ end trace 8d484233fa7cb512 ]---
 note: modprobe[3275] exited with preempt_count 2
-
 ```
 
+???
+Actual Oops from the linux git history.
 
 ---
-# Step #3: Oops Analysis
+name: OOPSes
+# Step #3: Oops Analysis - The Toolkit
+
+```log
+BUG: unable to handle kernel NULL pointer dereference at           (null)
+IP: [<ffffffff816c7348>] __mutex_lock_slowpath+0x98/0x120
+PGD 1a3aa8067
+PUD 1a3b3d067
+PMD 0
+
+Oops: 0002 [#1] PREEMPT SMP
+Modules linked in: bnep ccm binfmt_misc uvcvideo videobuf2_vmalloc videobuf2_memops videobuf2_v4l2 videobuf2_core hid_a4tech videodev x86_pkg_temp_thermal intel_powerclamp coretemp ath3k btusb btrtl btintel bluetooth kvm_intel snd_hda_codec_hdmi kvm snd_hda_codec_realtek snd_hda_codec_generic irqbypass crc32c_intel arc4 i915 snd_hda_intel snd_hda_codec ath9k ath9k_common ath9k_hw ath i2c_algo_bit snd_hwdep mac80211 ghash_clmulni_intel snd_hda_core snd_pcm snd_timer cfg80211 ehci_pci xhci_pci drm_kms_helper syscopyarea sysfillrect sysimgblt fb_sys_fops drm xhci_hcd ehci_hcd asus_nb_wmi(-) asus_wmi sparse_keymap r8169 rfkill mxm_wmi serio_raw snd mii mei_me lpc_ich i2c_i801 video soundcore mei i2c_smbus wmi i2c_core mfd_core
+CPU: 3 PID: 3275 Comm: modprobe Not tainted 4.9.34-gentoo #34
+Hardware name: ASUSTeK COMPUTER INC. K56CM/K56CM, BIOS K56CM.206 08/21/2012
+task: ffff8801a639ba00 task.stack: ffffc900014cc000
+RIP: 0010:[<ffffffff816c7348>]  [<ffffffff816c7348>] __mutex_lock_slowpath+0x98/0x120
+RSP: 0018:ffffc900014cfce0  EFLAGS: 00010282
+RAX: 0000000000000000 RBX: ffff8801a54315b0 RCX: 00000000c0000100
+RDX: 0000000000000001 RSI: 0000000000000000 RDI: ffff8801a54315b4
+RBP: ffffc900014cfd30 R08: 0000000000000000 R09: 0000000000000002
+R10: 0000000000000000 R11: 0000000000000000 R12: ffff8801a54315b4
+R13: ffff8801a639ba00 R14: 00000000ffffffff R15: ffff8801a54315b8
+FS:  00007faa254fb700(0000) GS:ffff8801aef80000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000000000 CR3: 00000001a3b1b000 CR4: 00000000001406e0
+```
+???
+* BUG_ON interface used.
+* IP = Instruction Pointer
+
+* OOPS = #1
+* Modules
+* Comm = Command
+* Tainted - documetned in tainted-kernels.rst
+
+---
+
+# Step #3: Oops Analysis - The Toolkit
+
+```log
+RIP: 0010:[<ffffffff816c7348>]  [<ffffffff816c7348>] __mutex_lock_slowpath+0x98/0x120
+RSP: 0018:ffffc900014cfce0  EFLAGS: 00010282
+RAX: 0000000000000000 RBX: ffff8801a54315b0 RCX: 00000000c0000100
+RDX: 0000000000000001 RSI: 0000000000000000 RDI: ffff8801a54315b4
+RBP: ffffc900014cfd30 R08: 0000000000000000 R09: 0000000000000002
+R10: 0000000000000000 R11: 0000000000000000 R12: ffff8801a54315b4
+R13: ffff8801a639ba00 R14: 00000000ffffffff R15: ffff8801a54315b8
+FS:  00007faa254fb700(0000) GS:ffff8801aef80000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000000000 CR3: 00000001a3b1b000 CR4: 00000000001406e0
+```
+
+```shell
+$ objdump -d -S -l ./vmlinux-4.15.0-22-generic > /tmp/objdump.out
+```
+
+```assembly
+ffffffff81992130 <__mutex_lock_slowpath>:
+__mutex_lock_slowpath():
+/build/linux-lZKWha/linux-4.15.0/kernel/locking/mutex.c:1130
+ffffffff81992130:       e8 3b fb 06 00          callq  ffffffff81a01c70 <__fentry__>
+ffffffff81992135:       55                      push   %rbp
+/build/linux-lZKWha/linux-4.15.0/kernel/locking/mutex.c:1131
+ffffffff81992136:       be 02 00 00 00          mov    $0x2,%esi
+/build/linux-lZKWha/linux-4.15.0/kernel/locking/mutex.c:1130
+ffffffff8199213b:       48 89 e5                mov    %rsp,%rbp
+```
+
+???
+* Current Register state
+
+* Highlight the push
+
+---
+
+# Step #3: Oops Analysis - The Toolkit
+
+### Register to argument mapping defined in: [linux]/arch/x86/entry/calling.h
+### x86 function call convention, 64-bit:
+
+```c
+arguments            |  callee-saved      | extra caller-saved | return 
+(callee-clobbered)   |                    | (callee-clobbered) |  
+-------------------- | -------------------| -------------------| -------------
+rdi rsi rdx rcx r8-9 | rbx rbp [*] r12-15 | r10-11             | rax, rdx [**] 
+``` 
+
+???
+RIP: Register Instruction Pointer
+RSP: Register Stack Pointer
+
+---
+
+# Step #3: Oops Analysis - The Toolkit
+
+```log
+Stack:
+ ffff8801a54315b8 0000000000000000 ffffffff814733ae ffffc900014cfd28
+ ffffffff8146a28c ffff8801a54315b0 0000000000000000 ffff8801a54315b0
+ ffff8801a66f3820 0000000000000000 ffffc900014cfd48 ffffffff816c73e7
+Call Trace:
+ [<ffffffff814733ae>] ? acpi_ut_release_mutex+0x5d/0x61
+ [<ffffffff8146a28c>] ? acpi_ns_get_node+0x49/0x52
+ [<ffffffff816c73e7>] mutex_lock+0x17/0x30
+ [<ffffffffa00a3bb4>] asus_rfkill_hotplug+0x24/0x1a0 [asus_wmi]
+ [<ffffffffa00a4421>] asus_wmi_rfkill_exit+0x61/0x150 [asus_wmi]
+ [<ffffffffa00a49f1>] asus_wmi_remove+0x61/0xb0 [asus_wmi]
+ [<ffffffff814a5128>] platform_drv_remove+0x28/0x40
+ [<ffffffff814a2901>] __device_release_driver+0xa1/0x160
+ [<ffffffff814a29e3>] device_release_driver+0x23/0x30
+ [<ffffffff814a1ffd>] bus_remove_device+0xfd/0x170
+ [<ffffffff8149e5a9>] device_del+0x139/0x270
+ [<ffffffff814a5028>] platform_device_del+0x28/0x90
+ [<ffffffff814a50a2>] platform_device_unregister+0x12/0x30
+ [<ffffffffa00a4209>] asus_wmi_unregister_driver+0x19/0x30 [asus_wmi]
+ [<ffffffffa00da0ea>] asus_nb_wmi_exit+0x10/0xf26 [asus_nb_wmi]
+ [<ffffffff8110c692>] SyS_delete_module+0x192/0x270
+ [<ffffffff810022b2>] ? exit_to_usermode_loop+0x92/0xa0
+ [<ffffffff816ca560>] entry_SYSCALL_64_fastpath+0x13/0x94
+```
+
+???
+- Stack: Area Near the stack pointer.
+- Call Trace: trace Top most functions were most recently executed.
+
+---
+
+# Step #3: Oops Analysis - The Toolkit
+
+```log 
+Code: e8 5e 30 00 00 8b 03 83 f8 01 0f 84 93 00 00 00 48 8b 43 10 4c 8d 7b 08 48 89 63 10 41 be ff ff ff ff 4c 89 3c 24 48 89 44 24 08 <48> 89 20 4c 89 6c 24 10 eb 1d 4c 89 e7 49 c7 45 08 02 00 00 00
+RIP  [<ffffffff816c7348>] __mutex_lock_slowpath+0x98/0x120
+ RSP <ffffc900014cfce0>
+CR2: 0000000000000000
+---[ end trace 8d484233fa7cb512 ]---
+note: modprobe[3275] exited with preempt_count 2
+```
+
+Code: is a hex-dump of the section of machine code that was being run at the time the Oops occurred
+ Use decodecode from scripts directory to translate this into assembly language.
+
+---
+# Case Study: Oops Analysis
 
 ```log
 XFS (dm-4): Internal error XFS_WANT_CORRUPTED_GOTO at line 3505 of file 
   fs/xfs/libxfs/xfs_btree.c. Caller xfs_free_ag_extent+0x35d/0x7a0 [xfs]
 CPU: 18 PID: 9896 Comm: mesos-slave Not tainted 4.10.10-1.el7.elrepo.x86_64 #1
 ```
-* Exact Kernel Version + line number.
+* Provides exact Kernel Version + file + line number.
 
 --
 
@@ -420,12 +569,13 @@ CPU: 18 PID: 9896 Comm: mesos-slave Not tainted 4.10.10-1.el7.elrepo.x86_64 #1
 3505         XFS_WANT_CORRUPTED_GOTO(cur->bc_mp, i == 1, error0);
 ```
 ???
-i = status return code for passing up the stack. success/failure.
+Before we get too deep into code inspection let's see what the rest of the oops is telling us.
 
-There are about 4 ways that stat could be set to 1 by xfs_btree_insrec
 
 ---
-# Step #3: Oops Analysis: The stack trace
+
+# Case Study: Oops Analysis: The stack trace
+
 ```log
 Call Trace:
 dump_stack+0x63/0x87
@@ -446,47 +596,46 @@ SyS_rmdir+0x16/0x20
 do_syscall_64+0x67/0x180
 entry_SYSCALL64_slow_path+0x25/0x25
 ```
+???
+- Notice the system calls
+- Notice the presence of xfs_free_ag_extent
+- These are both clues as to what might be going wrong.
 
-* Can use gdb to perform math on a debug symbol enabled vmlinux
+- XFS keeps track of free space in a b+ tree.
+- When you delete something, you track the new space by adding a new node to the free space b+ tree.
 
-```shell
-$ gdb vmlinux
-(gdb) l *xfs_btree_insert+0x1b0/0x1c0
-```
+- The registers will not likely be useful here, since we have moved significant distance from the original problem.
 
 ---
 
-# Step #3: Oops Analysis: The Registers
-```log
-RIP: 0033:0x7f85d8d92397
-RSP: 002b:00007f85cef9b758 EFLAGS: 00000246 ORIG_RAX: 0000000000000054
-RAX: ffffffffffffffda RBX: 00007f858c00b4c0 RCX: 00007f85d8d92397
-RDX: 00007f858c09ad70 RSI: 0000000000000000 RDI: 00007f858c09ad70
-RBP: 00007f85cef9bc30 R08: 0000000000000001 R09: 0000000000000002
-R10: 0000006f74656c67 R11: 0000000000000246 R12: 00007f85cef9c640
-R13: 00007f85cef9bc50 R14: 00007f85cef9bcc0 R15: 00007f85cef9bc40
-```
-### Disassemble the kernel
-- Get the debuginfo package
-- $ objdump -r -S -l --disassemble vmlinux > dump.out
-
-* Register to argument mapping defined in ./arch/x86/entry/calling.h
-* x86 function call convention, 64-bit:
+# Case Study: Code Inspection
 
 ```c
-arguments            |  callee-saved      | extra caller-saved | return 
-(callee-clobbered)   |                    | (callee-clobbered) |  
--------------------- | -------------------| -------------------| -------------
-rdi rsi rdx rcx r8-9 | rbx rbp [*] r12-15 | r10-11             | rax, rdx [**] 
-``` 
+3462 xfs_btree_insert(
+...
+3493         /*
+3494          * Insert nrec/nptr into this level of the tree.
+3495          * Note if we fail, nptr will be null.
+3496          */
+3497         error = xfs_btree_insrec(pcur, level, &nptr, &rec, key,
+3498                 &ncur, &i);
+3499         if (error) {
+3500             if (pcur != cur)
+3501                 xfs_btree_del_cursor(pcur, XFS_BTREE_ERROR);
+3502             goto error0;
+3503         }
+3504 
+3505         XFS_WANT_CORRUPTED_GOTO(cur->bc_mp, i == 1, error0);
+```
 
 ???
-RIP: Register Instruction Pointer
-RSP: Register Stack Pointer
+- i = status return code from xfs_btree_insrec. success/failure.
+- if i=0 we aren't happy
+- So what could be setting i=0?
 
-This isn't as useful to us, since the registers have likely been modified by the error path.
+There are about 4 ways that stat could be set to 1 by xfs_btree_insrec
 
-Additionally since we don't have a full memory dump they are only half-useful.
+Turns out a lot, but I narrowed it down to a bad or uninitialized value in the allocation group free list.
 
 ---
 
@@ -499,10 +648,12 @@ Additionally since we don't have a full memory dump they are only half-useful.
 
 * Check the git commit logs
 ```shell
- $ git log -r v4.4.. -i --grep "crash" fs/xfs
+ $ git log -r v4.10.. -i --grep "crash" fs/xfs
 ```
-???
-TODO: Goose egg
+```shell
+ $ git log -r v4.10.. -i --grep "agfl" fs/xfs
+```
+...
 
 ---
 
@@ -515,11 +666,13 @@ TODO: Goose egg
 * ftrace, jprobes, kprobes
 * Analyze filesystem metadata offline
 
+???
+In our case here we really should have gone and retreived the an xfs-metadump no matter how painful, but we didn't.
+
 ---
 
 # Step #6: Engaging the community.
 
---
 * Mailing lists
 --
 
@@ -527,34 +680,40 @@ TODO: Goose egg
   * patchwork.kernel.org
   * xfs-devel mailing list
   * Other subsystem specific lists
+--
+
 * IRC
 
 ---
 # Step #6: Engaging the community
 
 * E-mail sent to xfs devel mailing list
-> "My best guess given code analysis is that we are unable to allocate a new node in the allocation group btree free-list"
+  * Include full Oops output.
+  * Include any analysis you may have been able to do.
+> "My best guess given code analysis is that we are unable to allocate a new node in the allocation group free-list btree"
+
+???
 
 --
 
-* Flamed
-> "/me shakes his head.
-> 
-> That filesystem started as a 2.5GB image and was grown to 1TB on
-> deployment. What could possibly go wrong?" <br>
+* Response
+> "Without xfs_repair output, 
+> however, we have no idea whether this was caused by corruption or
+> some other problem. <br>
+> ... <br>
+> "If I had a dollar for every time I've seen this sort of error <br>
+> report, I'd have retired years ago.....
+>  <br>
 > <div align="right">- Dave Chinner </div>
 
---
-<center><h1>i.e. PEBKAC- You're Using It Wrong</h1></center>
+???
+You know how we weren't able to get that xfs filesystem metadump earlier? Now we definitely need it.
 
 ---
 
 # Step #6: Engaging the community
 
-* E-mail sent to xfs devel mailing list
-> "My best guess given code analysis is that we are unable to allocate a new node in the allocation group btree free-list"
-
-* IRC
+* After gathering a metadump of a broken filesystem, I responded to Dave via IRC with xfs-repair output
 
 --
 > "This is the problematic issue: commit 96f859d52bcb ("libxfs: pack the agfl header structure so XFS_AGFL_SIZE is correct")"
@@ -581,29 +740,38 @@ TODO: Goose egg
 
 * Explicitly removed problematic patch
 * Submitted patch removal to the elrepo kernel.
-* Created a custom built xfs-repair that understands the patch.
+  * http://elrepo.org/bugs/view.php?id=829
+  * http://elrepo.org/bugs/view.php?id=833
 
---
+* Considered running xfs-repair on every /var volume in our cluster.
 
-### BUT
-* There's no easy way to run xfs-repair on a root volume accross an entire cluster.
+* Proceeded to attempt to create a "fixup" patchset.
+
+???
+Temporary because it's not acceptable to the mainline kernel
+
+Unfortunately as of 4.16 there's no way to run xfs-repair out of the initramfs.
 
 ---
 class: full-height
 
 background-image: url(baby.jpg)
 
+???
+While on paternity leave the xfs team caught up to me, and actually wrote patches to "fixup" the issue.
+
 ---
 
 # Step #7: The Real fix
 
-* Many conversations on IRC 
-
-* 4 debates on xfs-devel over patch revisions 
+* 4 patch set rewrites on on xfs-devel
 
 --
 
-* 2 months later a27ba2607 is accepted into the xfs-devel tree
+* 3 months later a27ba2607 is accepted into the xfs-devel tree
+
+???
+I was really happy about this, and even got a reviewed by attribution in the process.
 
 ---
 
@@ -611,7 +779,7 @@ background-image: url(baby.jpg)
 
 * mainline
 
-  * Linus merges patches from xfs-devel into 4.17rc1.
+  * A month later Linus merges patches from xfs-devel into 4.17rc1 during the 4.17 merge window.
 
 --
 
